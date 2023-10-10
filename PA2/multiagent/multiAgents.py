@@ -259,7 +259,32 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         legal moves.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        def find_max_value(state, depth):
+            legal_actions = state.getLegalActions(0)
+            if not legal_actions or depth == self.depth:
+                return self.evaluationFunction(state)
+
+            max_value = max(find_expected_value(state.generateSuccessor(0, action), 0 + 1, depth + 1) for action in legal_actions)
+            return max_value
+
+        def find_expected_value(state, agent_index, depth):
+            legal_actions = state.getLegalActions(agent_index)
+            if not legal_actions:
+                return self.evaluationFunction(state)
+
+            probability = 1.0 / len(legal_actions)
+            expected_value = 0
+            for action in legal_actions:
+                new_state = state.generateSuccessor(agent_index, action)
+                if agent_index == state.getNumAgents() - 1:
+                    expected_value += find_max_value(new_state, depth) * probability
+                else:
+                    expected_value += find_expected_value(new_state, agent_index + 1, depth) * probability
+            return expected_value
+
+        legal_actions = gameState.getLegalActions()
+        best_action = max(legal_actions, key=lambda action: find_expected_value(gameState.generateSuccessor(0, action), 1, 1))
+        return best_action
 
 def betterEvaluationFunction(currentGameState: GameState):
     """
@@ -269,7 +294,15 @@ def betterEvaluationFunction(currentGameState: GameState):
     DESCRIPTION: <write something here so we know what you did>
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    pacman_position = currentGameState.getPacmanPosition()
+    food_positions = currentGameState.getFood().asList()
+
+    closest_food_distance = min(manhattanDistance(pacman_position, food) for food in food_positions) if food_positions else 0.5
+    current_score = currentGameState.getScore()
+
+    evaluation = 1.0 / closest_food_distance + current_score
+    return evaluation
+
 
 # Abbreviation
 better = betterEvaluationFunction
